@@ -15,19 +15,19 @@ impl <'a> Lexer<'a> {
     }
   }
 
-  fn is_ended(&self) -> bool {
+  fn is_at_end(&self) -> bool {
     self.curr >= self.input.len()
   }
 
   fn peek(&self) -> u8 {
-    if self.is_ended() {
+    if self.is_at_end() {
       b'\0'
     } else {
       self.input.as_bytes()[self.curr]
     }
   }
 
-  fn next(&mut self) -> u8 {
+  fn advance(&mut self) -> u8 {
     let ch = self.peek();
     self.curr = self.next;
     self.next += 1;
@@ -38,7 +38,7 @@ impl <'a> Lexer<'a> {
     loop {
       match self.peek() {
         b' ' | b'\n' | b'\r' | b'\t' => {
-          self.next();
+          self.advance();
         }
         _ => break,
       }
@@ -51,7 +51,7 @@ impl <'a> Lexer<'a> {
     loop {
       match self.peek() {
         b'0'..=b'9' => {
-          self.next();
+          self.advance();
         }
         _ => {
           break;
@@ -60,12 +60,12 @@ impl <'a> Lexer<'a> {
     }
 
     if self.peek() == b'.' {
-      self.next();
+      self.advance();
 
       loop {
         match self.peek() {
           b'0'..=b'9' => {
-            self.next();
+            self.advance();
           }
           _ => {
             break;
@@ -118,11 +118,11 @@ impl <'a> Lexer<'a> {
     };
 
     let slice = &self.input[curr..self.next];
-    self.next();
+    self.advance();
     Token::new(kind, slice)
   }
 
-  fn lex(&mut self) {
+  pub fn lex(&mut self) -> Vec<Token> {
     let mut tokens = Vec::new();
 
     loop {
@@ -134,11 +134,9 @@ impl <'a> Lexer<'a> {
           break;
         }
       }
-
-      println!("{:?}", self.peek() as char);
     }
 
-    println!("{:#?}", tokens);
+    return tokens;
   }
 }
 
@@ -147,6 +145,8 @@ mod tests {
   #[test]
   fn lexer() {
     let mut lexer = super::Lexer::new("(3.141592 + 20) - 30 * 40 / 50 % 60");
-    lexer.lex();
+    let tokens = lexer.lex();
+
+    println!("{:#?}", tokens);
   }
 }

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
   LeftParen,
   RightParen,
@@ -10,12 +10,11 @@ pub enum TokenKind {
   Percent,
 
   Number,
-  Identifier,
 
   Eof,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token<'a> {
   pub kind: TokenKind,
   pub slice: &'a str,
