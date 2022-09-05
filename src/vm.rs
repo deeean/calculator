@@ -89,7 +89,7 @@ impl VM {
           let result = match self.binary_op(left, right, op) {
             Some(result) => result,
             None => {
-              println!("invalid operation");
+              println!("Invalid operation");
               break;
             }
           };
@@ -99,6 +99,7 @@ impl VM {
         Opcode::Return => {
           return Some(self.pop())
         }
+        _ => {}
       }
 
       self.ip += 1;

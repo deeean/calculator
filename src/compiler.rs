@@ -32,6 +32,9 @@ impl Compiler {
         let constant = self.add_constant(Object::Number(*n));
         self.emit(Opcode::Constant(constant));
       }
+      Expr::Identifier(name) => {
+        // let constant = self.add_identifier(*name);
+      }
       Expr::BinaryOp(left, op, right) => {
         self.compile_expr(left);
         self.compile_expr(right);
@@ -44,6 +47,14 @@ impl Compiler {
           BinaryOperator::Modulo => self.emit(Opcode::Modulo),
         };
       }
+      Expr::Call(identifier, args) => {
+        self.compile_expr(identifier);
+
+        for arg in *args.clone() {
+          self.compile_expr(&arg);
+        }
+      }
+      _ => {}
     }
   }
 
@@ -74,7 +85,7 @@ mod tests {
 
   #[test]
   fn compile() {
-    let mut lexer = Lexer::new("10 + 20 - 30 * 40 / 50 % 60");
+    let mut lexer = Lexer::new("sin(1)");
     let mut parser = Parser::new(lexer.lex());
     let mut compiler = Compiler::new();
     let mut bytecode = compiler.compile(&parser.parse());

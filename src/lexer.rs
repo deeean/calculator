@@ -79,6 +79,25 @@ impl <'a> Lexer<'a> {
     Token::new(TokenKind::Number, slice)
   }
 
+  fn read_identifier(&mut self) -> Token<'a> {
+    let start = self.curr;
+
+    loop {
+      match self.peek() {
+        b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' => {
+          self.advance();
+        }
+        _ => {
+          break;
+        }
+      }
+    }
+
+    let slice = &self.input[start..self.curr];
+
+    Token::new(TokenKind::Identifier, slice)
+  }
+
   fn token(&mut self) -> Token<'a> {
     self.skip_whitespace();
 
@@ -87,6 +106,9 @@ impl <'a> Lexer<'a> {
     let kind = match self.peek() {
       b'0'..=b'9' => {
         return self.read_number();
+      }
+      b',' => {
+        TokenKind::Comma
       }
       b'+' => {
         TokenKind::Plus
@@ -108,6 +130,9 @@ impl <'a> Lexer<'a> {
       }
       b')' => {
         TokenKind::RightParen
+      }
+      b'a' ..= b'z' | b'A' ..= b'Z' => {
+        return self.read_identifier();
       }
       b'\0' => {
         return Token::new(TokenKind::Eof, "");

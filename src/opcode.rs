@@ -7,5 +7,6 @@ pub enum Opcode {
   Multiply,
   Divide,
   Modulo,
+  Call(u8),
   Return,
 }

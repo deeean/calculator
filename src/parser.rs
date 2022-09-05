@@ -8,6 +8,7 @@ pub enum Precedence {
   Factor,
   Unary,
   Grouping,
+  Call,
 }
 
 impl Precedence {
@@ -114,10 +115,77 @@ impl <'a> Parser<'a> {
     Some(expr)
   }
 
+  fn parse_expr_list(&mut self, end_token_kind: TokenKind) -> Option<Vec<Expr>> {
+    let mut exprs = Vec::new();
+
+    if self.next_peek().kind == end_token_kind {
+      self.advance();
+      return Some(exprs);
+    }
+
+    self.advance();
+
+    match self.parse_expr(Precedence::None) {
+      Some(expr) => {
+        exprs.push(expr);
+      },
+      None => return None,
+    };
+
+    while self.next_peek().kind == TokenKind::Comma {
+      self.advance();
+      self.advance();
+
+      match self.parse_expr(Precedence::None) {
+        Some(expr) => {
+          exprs.push(expr);
+        },
+        None => return None,
+      };
+    }
+
+    if self.next_peek().kind != end_token_kind {
+      return None;
+    }
+
+    self.advance();
+
+    Some(exprs)
+  }
+
+  fn parse_call_expr(&mut self, left: Option<Expr>) -> Option<Expr> {
+    let left = match left {
+      Some(expr) => expr,
+      None => return None,
+    };
+
+    let args = match self.parse_expr_list(TokenKind::RightParen) {
+      Some(args) => args,
+      None => return None,
+    };
+
+    Some(Expr::Call(Box::new(left), Box::new(args)))
+  }
+
+  fn parse_identifier(&mut self) -> Option<String> {
+    match self.peek().kind {
+      TokenKind::Identifier => Some(self.peek().slice.to_string()),
+      _ => None,
+    }
+  }
+
+  fn parse_identifier_expr(&mut self) -> Option<Expr> {
+    match self.parse_identifier() {
+      Some(identifier) => Some(Expr::Identifier(identifier)),
+      None => None,
+    }
+  }
+
   fn parse_expr(&mut self, precedence: Precedence) -> Option<Expr> {
     let mut left = match self.peek().kind {
       TokenKind::Number => self.parse_number_expr(),
       TokenKind::LeftParen => self.parse_grouping_expr(),
+      TokenKind::Identifier => self.parse_identifier_expr(),
       _ => return None
     };
 
@@ -130,6 +198,10 @@ impl <'a> Parser<'a> {
         TokenKind::Percent => {
           self.advance();
           left = self.parse_binary_op_expr(left);
+        }
+        TokenKind::LeftParen => {
+          self.advance();
+          left = self.parse_call_expr(left);
         }
         _ => return left,
       }
@@ -250,6 +322,19 @@ mod tests {
               ),
               BinaryOperator::Add,
               Box::new(Expr::Number(4.0))
+            )
+          )
+        ]
+      ),
+      (
+        "sin(1)",
+        vec![
+          Stmt::Expr(
+            Expr::Call(
+              Box::new(Expr::Identifier("sin".to_string())),
+              Box::new(vec![
+                Expr::Number(1.0)
+              ])
             )
           )
         ]

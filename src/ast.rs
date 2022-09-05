@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOperator {
   Add,
   Subtract,
@@ -7,10 +7,13 @@ pub enum BinaryOperator {
   Modulo,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
   Number(f64),
+  Identifier(String),
+
   BinaryOp(Box<Expr>, BinaryOperator, Box<Expr>),
+  Call(Box<Expr>, Box<Vec<Expr>>),
 }
 
 #[derive(Debug, PartialEq)]

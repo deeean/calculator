@@ -3,6 +3,8 @@ pub enum TokenKind {
   LeftParen,
   RightParen,
 
+  Comma,
+
   Plus,
   Minus,
   Star,
@@ -10,6 +12,7 @@ pub enum TokenKind {
   Percent,
 
   Number,
+  Identifier,
 
   Eof,
 }
