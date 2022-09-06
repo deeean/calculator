@@ -1,9 +1,9 @@
 mod ast;
 mod bytecode;
-mod compiler;
-mod lexer;
+pub mod compiler;
+pub mod lexer;
 mod token;
 mod opcode;
 mod object;
-mod parser;
-mod vm;
+pub mod parser;
+pub mod vm;

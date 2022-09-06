@@ -152,8 +152,6 @@ impl VM {
         _ => {}
       }
 
-      println!("ip: {}, stack: {:?}", self.ip, self.stack);
-
       self.ip += 1;
     }
 
