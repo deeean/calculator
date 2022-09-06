@@ -7,6 +7,12 @@ pub enum Opcode {
   Multiply,
   Divide,
   Modulo,
+  Equal,
+  Not,
+  Greater,
+  Less,
+  And,
+  Or,
   Call(u8),
   Return,
 }

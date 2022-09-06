@@ -27,6 +27,14 @@ impl <'a> Lexer<'a> {
     }
   }
 
+  fn next_peek(&self) -> u8 {
+    if self.next >= self.input.len() {
+      b'\0'
+    } else {
+      self.input.as_bytes()[self.next]
+    }
+  }
+
   fn advance(&mut self) -> u8 {
     let ch = self.peek();
     self.curr = self.next;
@@ -94,8 +102,12 @@ impl <'a> Lexer<'a> {
     }
 
     let slice = &self.input[start..self.curr];
+    let kind = match slice {
+      "true" | "false" => TokenKind::Boolean,
+      _ => TokenKind::Identifier,
+    };
 
-    Token::new(TokenKind::Identifier, slice)
+    Token::new(kind, slice)
   }
 
   fn token(&mut self) -> Token<'a> {
@@ -106,6 +118,54 @@ impl <'a> Lexer<'a> {
     let kind = match self.peek() {
       b'0'..=b'9' => {
         return self.read_number();
+      }
+      b'>' => {
+        if self.next_peek() == b'=' {
+          self.advance();
+          TokenKind::GreaterEqual
+        } else {
+          TokenKind::Greater
+        }
+      }
+      b'<' => {
+        if self.next_peek() == b'=' {
+          self.advance();
+          TokenKind::LessEqual
+        } else {
+          TokenKind::Less
+        }
+      }
+      b'=' => {
+        if self.next_peek() == b'=' {
+          self.advance();
+          TokenKind::EqualEqual
+        } else {
+          TokenKind::Equal
+        }
+      }
+      b'!' => {
+        if self.next_peek() == b'=' {
+          self.advance();
+          TokenKind::BangEqual
+        } else {
+          TokenKind::Bang
+        }
+      }
+      b'&' => {
+        if self.next_peek() == b'&' {
+          self.advance();
+          TokenKind::AmpAmp
+        } else {
+          TokenKind::Amp
+        }
+      }
+      b'|' => {
+        if self.next_peek() == b'|' {
+          self.advance();
+          TokenKind::PipePipe
+        } else {
+          TokenKind::Pipe
+        }
       }
       b',' => {
         TokenKind::Comma
@@ -169,7 +229,7 @@ impl <'a> Lexer<'a> {
 mod tests {
   #[test]
   fn lexer() {
-    let mut lexer = super::Lexer::new("(3.141592 + 20) - 30 * 40 / 50 % 60");
+    let mut lexer = super::Lexer::new("10 >= 30 && 20 < 40");
     let tokens = lexer.lex();
 
     println!("{:#?}", tokens);

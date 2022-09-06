@@ -58,6 +58,26 @@ impl VM {
           _ => None,
         }
       }
+      BinaryOperator::Equal => {
+        match (left, right) {
+          (Object::Number(left), Object::Number(right)) => Some(Object::Boolean(left == right)),
+          (Object::Boolean(left), Object::Boolean(right)) => Some(Object::Boolean(left == right)),
+          _ => None,
+        }
+      }
+      BinaryOperator::GreaterThan => {
+        match (left, right) {
+          (Object::Number(left), Object::Number(right)) => Some(Object::Boolean(left > right)),
+          _ => None,
+        }
+      }
+      BinaryOperator::LessThan => {
+        match (left, right) {
+          (Object::Number(left), Object::Number(right)) => Some(Object::Boolean(left < right)),
+          _ => None,
+        }
+      }
+      _ => None,
     }
   }
 
@@ -70,11 +90,38 @@ impl VM {
           let constant = bytecode.constants[constant];
           self.stack.push(constant);
         }
+        Opcode::Not => {
+          let value = self.pop();
+          self.stack.push(Object::Boolean(Object::is_falsey(&value)));
+        }
+        Opcode::And => {
+          let right = self.pop();
+          let left = self.pop();
+
+          if Object::is_truthy(&left) && Object::is_truthy(&right) {
+            self.stack.push(Object::Boolean(true));
+          } else {
+            self.stack.push(Object::Boolean(false));
+          }
+        }
+        Opcode::Or => {
+          let right = self.pop();
+          let left = self.pop();
+
+          if Object::is_truthy(&left) || Object::is_truthy(&right) {
+            self.stack.push(Object::Boolean(true));
+          } else {
+            self.stack.push(Object::Boolean(false));
+          }
+        }
         Opcode::Add |
         Opcode::Subtract |
         Opcode::Multiply|
         Opcode::Divide |
-        Opcode::Modulo => {
+        Opcode::Modulo |
+        Opcode::Equal |
+        Opcode::Greater |
+        Opcode::Less => {
           let right = self.pop();
           let left = self.pop();
           let op = match opcode {
@@ -83,6 +130,9 @@ impl VM {
             Opcode::Multiply => BinaryOperator::Multiply,
             Opcode::Divide => BinaryOperator::Divide,
             Opcode::Modulo => BinaryOperator::Modulo,
+            Opcode::Equal => BinaryOperator::Equal,
+            Opcode::Greater => BinaryOperator::GreaterThan,
+            Opcode::Less => BinaryOperator::LessThan,
             _ => unreachable!()
           };
 
@@ -101,6 +151,8 @@ impl VM {
         }
         _ => {}
       }
+
+      println!("ip: {}, stack: {:?}", self.ip, self.stack);
 
       self.ip += 1;
     }
@@ -199,6 +251,18 @@ mod tests {
       (
         "29.6 * 195.03 + 900.224 - 842.7289 % 843.41432 * 596.1034 - 44.160",
         Object::Number(-495724.6105682599)
+      ),
+      (
+        "true && false",
+        Object::Boolean(false)
+      ),
+      (
+        "false || true",
+        Object::Boolean(true)
+      ),
+      (
+        "10 > 1",
+        Object::Boolean(true)
       )
     ];
 
@@ -207,6 +271,7 @@ mod tests {
       let mut parser = Parser::new(lexer.lex());
       let mut compiler = Compiler::new();
       let mut bytecode = compiler.compile(&parser.parse());
+      println!("bytecode: {:?}", bytecode);
       let mut vm = VM::default();
       let result = vm.run(bytecode).unwrap();
 

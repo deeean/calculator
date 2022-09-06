@@ -11,7 +11,23 @@ pub enum TokenKind {
   Slash,
   Percent,
 
+  Bang,
+  BangEqual,
+  Equal,
+  EqualEqual,
+  Greater,
+  GreaterEqual,
+  Less,
+  LessEqual,
+
+  Pipe,
+  PipePipe,
+
+  Amp,
+  AmpAmp,
+
   Number,
+  Boolean,
   Identifier,
 
   Eof,

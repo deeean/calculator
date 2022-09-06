@@ -4,6 +4,10 @@ use crate::token::{Token, TokenKind};
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Precedence {
   None,
+  Or,
+  And,
+  Equality,
+  Comparison,
   Term,
   Factor,
   Unary,
@@ -14,6 +18,10 @@ pub enum Precedence {
 impl Precedence {
   pub fn from(kind: TokenKind) -> Precedence {
     match kind {
+      TokenKind::PipePipe => Precedence::Or,
+      TokenKind::AmpAmp => Precedence::And,
+      TokenKind::EqualEqual | TokenKind::BangEqual => Precedence::Equality,
+      TokenKind::Greater | TokenKind::GreaterEqual | TokenKind::Less | TokenKind::LessEqual => Precedence::Comparison,
       TokenKind::Plus | TokenKind::Minus => Precedence::Term,
       TokenKind::Slash | TokenKind::Star | TokenKind::Percent => Precedence::Factor,
       TokenKind::LeftParen => Precedence::Grouping,
@@ -65,6 +73,15 @@ impl <'a> Parser<'a> {
     token.clone()
   }
 
+  fn parse_boolean_expr(&mut self) -> Option<Expr> {
+    match self.peek().kind {
+      TokenKind::Boolean => {
+        Some(Expr::Boolean(self.peek().slice == "true"))
+      }
+      _ => None,
+    }
+  }
+
   fn parse_number_expr(&mut self) -> Option<Expr> {
     match self.peek().kind {
       TokenKind::Number => {
@@ -73,6 +90,10 @@ impl <'a> Parser<'a> {
       }
       _ => None,
     }
+  }
+
+  fn parse_unary_op_expr(&mut self) -> Option<Expr> {
+    None
   }
 
   fn parse_binary_op_expr(&mut self, left: Option<Expr>) -> Option<Expr> {
@@ -87,6 +108,14 @@ impl <'a> Parser<'a> {
       TokenKind::Star => BinaryOperator::Multiply,
       TokenKind::Slash => BinaryOperator::Divide,
       TokenKind::Percent => BinaryOperator::Modulo,
+      TokenKind::EqualEqual => BinaryOperator::Equal,
+      TokenKind::BangEqual => BinaryOperator::NotEqual,
+      TokenKind::Greater => BinaryOperator::GreaterThan,
+      TokenKind::GreaterEqual => BinaryOperator::GreaterThanOrEqual,
+      TokenKind::Less => BinaryOperator::LessThan,
+      TokenKind::LessEqual => BinaryOperator::LessThanOrEqual,
+      TokenKind::AmpAmp => BinaryOperator::And,
+      TokenKind::PipePipe => BinaryOperator::Or,
       _ => return None,
     };
 
@@ -184,6 +213,7 @@ impl <'a> Parser<'a> {
   fn parse_expr(&mut self, precedence: Precedence) -> Option<Expr> {
     let mut left = match self.peek().kind {
       TokenKind::Number => self.parse_number_expr(),
+      TokenKind::Boolean => self.parse_boolean_expr(),
       TokenKind::LeftParen => self.parse_grouping_expr(),
       TokenKind::Identifier => self.parse_identifier_expr(),
       _ => return None
@@ -195,7 +225,15 @@ impl <'a> Parser<'a> {
         TokenKind::Minus |
         TokenKind::Star |
         TokenKind::Slash |
-        TokenKind::Percent => {
+        TokenKind::Percent |
+        TokenKind::EqualEqual |
+        TokenKind::BangEqual |
+        TokenKind::Greater |
+        TokenKind::GreaterEqual |
+        TokenKind::Less |
+        TokenKind::LessEqual |
+        TokenKind::PipePipe |
+        TokenKind::AmpAmp => {
           self.advance();
           left = self.parse_binary_op_expr(left);
         }
@@ -335,6 +373,24 @@ mod tests {
               Box::new(vec![
                 Expr::Number(1.0)
               ])
+            )
+          )
+        ]
+      ),
+      (
+        "true && 10 > 1",
+        vec![
+          Stmt::Expr(
+            Expr::BinaryOp(
+              Box::new(Expr::Boolean(true)),
+              BinaryOperator::And,
+              Box::new(
+                Expr::BinaryOp(
+                  Box::new(Expr::Number(10.0)),
+                  BinaryOperator::GreaterThan,
+                  Box::new(Expr::Number(1.0))
+                )
+              )
             )
           )
         ]
